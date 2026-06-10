@@ -105,6 +105,9 @@ internal class EditTagDialogState : DialogState
     // We need to access the Window somehow!
     private readonly MainWindow _window;
 
+    // This is so we focus on the Name TextBox if clicking the Rename button!
+    internal bool IsRename { get; }
+
     // Here's all the fields we bind to in the XAML...
     // The Title TextBlock...
     internal string TitleText { get; }
@@ -143,16 +146,20 @@ internal class EditTagDialogState : DialogState
     internal bool ValueVisible => _window.SelectedTreeNodes.FirstOrDefault()?.DataNode.CanEditNode ?? false;
 
     // Here we set up the Dialog!
-    internal EditTagDialogState(MainWindow window)
+    internal EditTagDialogState(MainWindow window, bool isRename = false)
     {
         _window = window;
+        IsRename = isRename;
+
         var selectedTreeNode = window.SelectedTreeNodes.FirstOrDefault();
         var nodeName = selectedTreeNode?.DataNode.NodeName;
         var tagDataNode = selectedTreeNode?.DataNode as TagDataNode;
-        DialogTagType = tagDataNode?.Tag.GetTagType() ?? TagType.TAG_END;
+
+        var trueTagType = tagDataNode?.Tag.GetTagType();
+        DialogTagType = trueTagType ?? TagType.TAG_END;
 
         // Set the context-accurate Title and Type.
-        TitleText = $"Edit {MainWindow.GetFriendlyTag(DialogTagType)}";
+        TitleText = $"Edit {MainWindow.GetFriendlyTag(trueTagType)}";
 
         // If the TreeNode is a NbtFileDataNode, its Renameable Name is different.
         _oldTagName = (selectedTreeNode?.DataNode is not NbtFileDataNode fileDataNode
@@ -160,15 +167,17 @@ internal class EditTagDialogState : DialogState
             : fileDataNode.TreeName) ?? "";
         TagName = _oldTagName;
 
+        if (tagDataNode is null) throw new UnreachableException();
+
         // If the TreeNode is an Array, we parse it depending on which kind it is.
-        _oldTagValue = tagDataNode?.Tag.GetTagType() switch
+        _oldTagValue = trueTagType switch
         {
             TagType.TAG_BYTE_ARRAY => string.Join(",", tagDataNode.Tag.ToTagByteArray().Data),
             TagType.TAG_SHORT_ARRAY => string.Join(",", tagDataNode.Tag.ToTagShortArray().Data),
             TagType.TAG_INT_ARRAY => string.Join(",", tagDataNode.Tag.ToTagIntArray().Data),
             TagType.TAG_LONG_ARRAY => string.Join(",", tagDataNode.Tag.ToTagLongArray().Data),
-            _ => tagDataNode?.Tag.ToString()
-        };
+            _ => tagDataNode.Tag.ToString()
+        } ?? "";
         TagValue = _oldTagValue;
     }
 
@@ -177,12 +186,26 @@ internal class EditTagDialogState : DialogState
     {
         get
         {
-            var node = _window.SelectedTreeNodes.FirstOrDefault()?.DataNode;
+            // Only enable the OK button if:
+            // - The use inputted a new Name or Value.
+            // - The new Name is valid for the corresponding TagType.
+            // - The new Value is valid for the corresponding TagType.
+            var hasNewTagName = _oldTagName != TagName;
+            var hasNewTagValue = _oldTagValue != TagValue;
 
-            if (!node.CanEditNode) return !string.IsNullOrEmpty(TagName) && _oldTagName != TagName;
+            if (!hasNewTagName && !hasNewTagValue) return false;
 
-            return !string.IsNullOrEmpty(TagName) && !string.IsNullOrEmpty(TagValue)
-            && _oldTagName != TagName && _oldTagValue != TagValue;
+            var tagNode = _window.SelectedTreeNodes.FirstOrDefault()?.DataNode;
+            var tagDataNode = tagNode as TagDataNode;
+            var metaTagContainer = tagDataNode?.Parent as IMetaTagContainer;
+            if (hasNewTagName)
+                return _oldTagName != TagName && (!string.IsNullOrEmpty(TagName) || tagNode is NbtFileDataNode) &&
+                       (metaTagContainer?.NamedTagContainer is null ||
+                        !metaTagContainer.NamedTagContainer.TagNamesInUse.Contains(TagName));
+
+            if (hasNewTagValue) return tagDataNode?.Tag is not null && ValidateTagValue(tagDataNode.Tag.GetTagType());
+
+            return false;
         }
     }
 
@@ -219,18 +242,21 @@ internal class EditTagDialogState : DialogState
     internal override async Task ExecuteAsync()
     {
         var selectedTreeNode = _window.SelectedTreeNodes.FirstOrDefault();
+        var dataNode = selectedTreeNode?.DataNode;
 
-        // Check if DataNode or tag is null.
-        var node = selectedTreeNode?.DataNode;
-        if (node is null) throw new UnreachableException();
-        if ((node as TagDataNode)?.Tag is null) throw new UnreachableException();
+        var hasNewTagName = _oldTagName != TagName;
+        var hasNewTagValue = _oldTagValue != TagValue;
 
+        var success = false;
         // ...we let the FormHandlers deal with it.
-        if (node.CanEditNode && !node.EditNode()) throw new UnreachableException();
-        if (_oldTagName != TagName && !node.RenameNode()) throw new UnreachableException();
+        if (hasNewTagName) success = dataNode?.RenameNode() == true;
+        if (hasNewTagValue) success = dataNode?.EditNode() == true;
 
-        // And we refresh its parent so the order updates.
-        if (selectedTreeNode.Parent is not null) await selectedTreeNode.Parent.RefreshChildNodesAsync();
+        if (!success) throw new UnreachableException();
+
+        // And, on a rename, we refresh its parent so the order updates.
+        if (hasNewTagName && selectedTreeNode?.Parent is not null)
+            await selectedTreeNode.Parent.RefreshChildNodesAsync();
     }
 }
 

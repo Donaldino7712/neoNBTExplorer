@@ -16,7 +16,7 @@ public partial class MainWindow
         {
             try
             {
-                // We just assign the value of the RenameTagTextBox, pretty simple.
+                // We just assign the value of the EditTagTextBox, pretty simple.
                 data.Value = (CurrentDialog as EditTagDialogState)?.TagName;
                 return true;
             }

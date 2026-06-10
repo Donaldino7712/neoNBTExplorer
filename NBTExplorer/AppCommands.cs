@@ -114,6 +114,7 @@ public partial class MainWindow
     internal AppCommand Cut { get; }
     internal AppCommand Copy { get; }
     internal AppCommand Paste { get; }
+    internal AppCommand Rename { get; }
     internal AppCommand EditValue { get; }
     internal AppCommand Delete { get; }
     internal AppCommand MoveUp { get; }
