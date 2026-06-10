@@ -83,12 +83,6 @@
                             </MenuItem.Icon>
                         </MenuItem>
                         <Separator />
-                        <MenuItem Header="_Rename" InputGesture="{OnPlatform 'Ctrl+R', macOS='Cmd+R'}"
-                                  Command="{Binding Rename}">
-                            <MenuItem.Icon>
-                                <ic:FluentIcon Icon="RenameA" />
-                            </MenuItem.Icon>
-                        </MenuItem>
                         <MenuItem Header="_Edit Value" InputGesture="{OnPlatform 'Ctrl+E', macOS='Cmd+E'}"
                                   Command="{Binding EditValue}">
                             <MenuItem.Icon>
@@ -194,12 +188,6 @@
                         </CommandBarButton>
 
                         <CommandBarSeparator />
-
-                        <CommandBarButton Label="Rename Tag" ToolTip.Tip="Rename Tag" Command="{Binding Rename}">
-                            <CommandBarButton.Icon>
-                                <ic:FluentIcon Icon="RenameA" />
-                            </CommandBarButton.Icon>
-                        </CommandBarButton>
 
                         <CommandBarButton Label="Edit Tag Value" ToolTip.Tip="Edit Tag Value"
                                           Command="{Binding EditValue}">
@@ -366,7 +354,6 @@
                     <KeyBinding Gesture="{OnPlatform 'Ctrl+C', macOS='Cmd+C'}" Command="{Binding Copy}" />
                     <KeyBinding Gesture="{OnPlatform 'Ctrl+V', macOS='Cmd+V'}" Command="{Binding Paste}" />
 
-                    <KeyBinding Gesture="{OnPlatform 'Ctrl+R', macOS='Cmd+R'}" Command="{Binding Rename}" />
                     <KeyBinding Gesture="{OnPlatform 'Ctrl+E', macOS='Cmd+E'}" Command="{Binding EditValue}" />
 
                     <KeyBinding Gesture="Delete" Command="{Binding Delete}" />
@@ -442,45 +429,48 @@
                                                 </Grid>
                                             </DataTemplate>
 
-                                            <!-- Rename Tag -->
-                                            <DataTemplate DataType="{x:Type local:RenameTagDialogState}">
-                                                <Grid RowDefinitions="Auto,*">
-                                                    <StackPanel Margin="0,0,0,12">
-                                                        <TextBlock TextWrapping="Wrap"
-                                                                   Text="{Binding TitleText}"
-                                                                   FontSize="20" FontWeight="SemiBold"
-                                                                   HorizontalAlignment="Left" VerticalAlignment="Top" />
-                                                    </StackPanel>
-                                                    <TextBox Loaded="DialogTextBox_Loaded"
-                                                             Text="{Binding TagName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                             PlaceholderText="Name" Grid.Row="1">
-                                                        <TextBox.KeyBindings>
-                                                            <KeyBinding Gesture="Enter"
-                                                                        Command="{Binding $parent[local:MainWindow].DialogOk}" />
-                                                        </TextBox.KeyBindings>
-                                                    </TextBox>
-                                                </Grid>
-                                            </DataTemplate>
-
                                             <!-- Edit Tag Value -->
                                             <DataTemplate DataType="{x:Type local:EditTagDialogState}">
-                                                <Grid RowDefinitions="Auto,*">
-                                                    <StackPanel Margin="0,0,0,12">
+                                                <Grid>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                    </Grid.RowDefinitions>
+
                                                         <TextBlock TextWrapping="Wrap"
-                                                                   Text="{Binding TitleText}"
-                                                                   FontSize="20" FontWeight="SemiBold"
-                                                                   HorizontalAlignment="Left" VerticalAlignment="Top" />
-                                                    </StackPanel>
-                                                    <TextBox Loaded="DialogTextBox_Loaded"
-                                                             Text="{Binding TagValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                             PlaceholderText="Value"
-                                                             TextWrapping="Wrap" MinLines="5" MaxLines="10"
-                                                             Grid.Row="1">
-                                                        <TextBox.KeyBindings>
-                                                            <KeyBinding Gesture="Enter"
+                                                            Text="{Binding TitleText}"
+                                                            FontSize="20" FontWeight="SemiBold"
+                                                            HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,0,0,12" />
+
+                                                    <StackPanel Grid.Row="1" Spacing="4">
+                                                        <Grid ColumnDefinitions="Auto,*">
+                                                            <TextBlock TextWrapping="Wrap"
+                                                                Text="Name:"
+                                                                FontSize="14" FontWeight="SemiBold"
+                                                                HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                                            <TextBox
+                                                                Text="{Binding TagName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                PlaceholderText="Name" VerticalAlignment="Center" Grid.Column="1">
+                                                                <TextBox.KeyBindings>
+                                                                    <KeyBinding Gesture="Enter"
                                                                         Command="{Binding $parent[local:MainWindow].DialogOk}" />
-                                                        </TextBox.KeyBindings>
-                                                    </TextBox>
+                                                                </TextBox.KeyBindings>
+                                                            </TextBox>
+                                                        </Grid>
+
+                                                        <TextBlock TextWrapping="Wrap" Text="Value:"
+                                                            FontSize="14" FontWeight="SemiBold"
+                                                            HorizontalAlignment="Left" VerticalAlignment="Top" />
+                                                        <TextBox Loaded="DialogTextBox_Loaded"
+                                                            Text="{Binding TagValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                            PlaceholderText="Value" TextWrapping="Wrap"
+                                                            MinLines="5" MaxLines="10">
+                                                            <TextBox.KeyBindings>
+                                                                <KeyBinding Gesture="Enter"
+                                                                    Command="{Binding $parent[local:MainWindow].DialogOk}" />
+                                                            </TextBox.KeyBindings>
+                                                        </TextBox>
+                                                    </StackPanel>
                                                 </Grid>
                                             </DataTemplate>
 

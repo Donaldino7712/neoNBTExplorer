@@ -99,7 +99,6 @@ public partial class MainWindow
         Copy.Toggle(ClipboardAvailable && single?.DataNode?.CanCopyNode == true);
         Paste.Toggle(ClipboardAvailable && single?.DataNode is not null && await single.DataNode.CanPasteIntoNode());
 
-        Rename.Toggle(single?.DataNode?.CanRenameNode ?? false);
         EditValue.Toggle(single?.DataNode?.CanEditNode ?? false);
         Delete.Toggle(SelectedTreeNodes.Count > 0 && SelectedTreeNodes.All(x => x.DataNode.CanDeleteNode));
 

@@ -261,17 +261,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             SelectedTreeNodes.Clear();
         });
 
-        // This one is executed when the user chooses to Rename a TreeNode.
-        Rename = CreateAppCommand(_ =>
-        {
-            // Check if DataNode is null.
-            var selectedTreeNode = SelectedTreeNodes.FirstOrDefault();
-            if (selectedTreeNode?.DataNode is null) throw new UnreachableException();
-
-            var state = new RenameTagDialogState(this);
-            OpenDialog(state);
-        });
-
         // This one is executed when the user chooses to Edit a TreeNode.
         EditValue = CreateAppCommand(_ =>
         {
