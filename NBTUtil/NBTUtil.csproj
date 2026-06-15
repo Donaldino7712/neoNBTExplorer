@@ -1,27 +1,21 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <OutputType>Exe</OutputType>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <Configurations>Debug;Release</Configurations>
-    <AssemblyTitle>NBTUtil</AssemblyTitle>
-    <Description>A command-line utility to inspect and modify NBT data.</Description>
-    <Product>NBTUtil</Product>
-    <Copyright>Copyright © Justin Aquadro 2014</Copyright>
-    <AssemblyVersion>1.0.1.0</AssemblyVersion>
-    <FileVersion>1.0.1.0</FileVersion>
-    <Platforms>AnyCPU</Platforms>
-  </PropertyGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\NBTModel\NBTModel.csproj" />
-    <ProjectReference Include="..\Substrate\SubstrateCS\Substrate.csproj" />
-  </ItemGroup>
-  <Target Name="AfterBuild">
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+
+        <AssemblyName>neoNBTUtil</AssemblyName>
+        <Version>0.0.0</Version>
+
+        <InvariantGlobalization>true</InvariantGlobalization>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+        <PublishAot>true</PublishAot>
+        <OptimizationPreference>Speed</OptimizationPreference>
+    </PropertyGroup>
+    
     <ItemGroup>
-      <Staging Include="$(OutputPath)\**\*.dll" />
-      <Staging Include="$(OutputPath)\**\*.exe" />
-      <Staging Include="$(OutputPath)\**\*.exe.config" />
+        <ProjectReference Include="..\NBTModel\NBTModel.csproj"/>
+        <ProjectReference Include="..\Substrate\SubstrateCS\Substrate.csproj"/>
     </ItemGroup>
-    <Copy SourceFiles="@(Staging)" DestinationFolder="..\Staging\%(RecursiveDir)" />
-  </Target>
 </Project>
