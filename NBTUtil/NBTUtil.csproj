@@ -13,6 +13,10 @@
         <PublishAot>true</PublishAot>
         <OptimizationPreference>Speed</OptimizationPreference>
     </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="System.CommandLine" Version="2.0.9" />
+    </ItemGroup>
     
     <ItemGroup>
         <ProjectReference Include="..\NBTModel\NBTModel.csproj"/>

@@ -1,37 +1,31 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using NBTExplorer.Model;
-using Substrate.Nbt;
 
-namespace NBTUtil.Ops
+namespace NBTUtil.Ops;
+
+internal class SetListOperation : ConsoleOperation
 {
-    class SetListOperation : ConsoleOperation
+    public override bool CanProcess(DataNode dataNode)
     {
-        public override bool CanProcess (DataNode dataNode)
+        return dataNode is TagListDataNode;
+    }
+
+    public override bool Process(DataNode dataNode, ConsoleOptions options)
+    {
+        if (dataNode is not TagListDataNode listNode) throw new NullReferenceException();
+
+        listNode.Clear();
+        foreach (var value in options.Values)
         {
-            if (!(dataNode is TagListDataNode))
+            var tag = TagDataNode.DefaultTag(listNode.Tag.ValueType);
+            var tagData = TagDataNode.CreateFromTag(tag);
+            if (!tagData.Parse(value))
                 return false;
 
-            return true;
+            if (!listNode.AppendTag(tagData.Tag))
+                return false;
         }
 
-        public override bool Process (DataNode dataNode, ConsoleOptions options)
-        {
-            TagListDataNode listNode = dataNode as TagListDataNode;
-
-            listNode.Clear();
-            foreach (string value in options.Values) {
-                TagNode tag = TagDataNode.DefaultTag(listNode.Tag.ValueType);
-                TagDataNode tagData = TagDataNode.CreateFromTag(tag);
-                if (!tagData.Parse(value))
-                    return false;
-
-                if (!listNode.AppendTag(tagData.Tag))
-                    return false;
-            }
-
-            return true;
-        }
+        return true;
     }
 }

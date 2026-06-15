@@ -1,130 +1,195 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Runtime.InteropServices;
-using System.Text;
+using System.CommandLine;
 using NBTExplorer.Model;
 using NBTUtil.Ops;
-using Substrate.Nbt;
 
-namespace NBTUtil
+namespace NBTUtil;
+
+internal static class ConsoleRunner
 {
-    class ConsoleRunner
+    private static readonly Dictionary<ConsoleCommand, ConsoleOperation> CommandTable = new()
     {
-        private static readonly Dictionary<ConsoleCommand, ConsoleOperation> _commandTable = new Dictionary<ConsoleCommand, ConsoleOperation>() {
-            { ConsoleCommand.SetValue, new EditOperation() },
-            { ConsoleCommand.SetList, new SetListOperation() },
-            { ConsoleCommand.Print, new PrintOperation() },
-            { ConsoleCommand.PrintTree, new PrintTreeOperation() },
-            { ConsoleCommand.Json, new JsonOperation() },
+        { ConsoleCommand.SetValue, new EditOperation() },
+        { ConsoleCommand.SetList, new SetListOperation() },
+        { ConsoleCommand.Print, new PrintOperation() },
+        { ConsoleCommand.PrintTree, new PrintTreeOperation() },
+        { ConsoleCommand.Json, new JsonOperation() }
+    };
+
+    private static readonly Option<string> PathOption = new("--path")
+    {
+        Description = "Path to NBT tag from current directory",
+        Required = true
+    };
+
+    private static readonly Option<bool> TypesOption = new("--types")
+    {
+        Description = "Show data types when printing tags"
+    };
+
+    public static int Run(string[] args)
+    {
+        var rootCommand = new RootCommand("neoNBTUtil - A modernised version of the unfinished NBTUtil")
+        {
+            PathOption,
+            PrintCommand,
+            PrintTreeCommand,
+            SetValueCommand,
+            SetListCommand,
+            JsonCommand
         };
 
-        private ConsoleOptions _options;
+        return rootCommand.Parse(args).Invoke();
+    }
 
-        public ConsoleRunner ()
+    private static Command PrintCommand
+    {
+        get
         {
-            _options = new ConsoleOptions();
+            var command = new Command("print", "Print the value(s) of a tag") { TypesOption };
+
+            command.SetAction(parsed =>
+            {
+                var options = new ConsoleOptions
+                {
+                    Command = ConsoleCommand.Print,
+                    Path = parsed.GetRequiredValue(PathOption),
+                    ShowTypes = parsed.GetValue(TypesOption)
+                };
+                Execute(options);
+            });
+
+            return command;
+        }
+    }
+
+    private static Command PrintTreeCommand
+    {
+        get
+        {
+            var command = new Command("printtree", "Print the NBT tree rooted at a tag") { TypesOption };
+
+            command.SetAction(parsed =>
+            {
+                var options = new ConsoleOptions
+                {
+                    Command = ConsoleCommand.PrintTree,
+                    Path = parsed.GetRequiredValue(PathOption),
+                    ShowTypes = parsed.GetValue(TypesOption)
+                };
+                Execute(options);
+            });
+
+            return command;
+        }
+    }
+
+    private static Command SetValueCommand
+    {
+        get
+        {
+            var valueArg = new Argument<string[]>("values")
+                { Description = "One or more values to set", Arity = ArgumentArity.OneOrMore };
+            var command = new Command("setvalue", "Set a single tag value") { valueArg };
+
+            command.SetAction(parsed =>
+            {
+                var options = new ConsoleOptions
+                {
+                    Command = ConsoleCommand.SetValue,
+                    Path = parsed.GetRequiredValue(PathOption)
+                };
+                options.Values.AddRange(parsed.GetValue(valueArg));
+                Execute(options);
+            });
+
+            return command;
+        }
+    }
+
+    private static Command SetListCommand
+    {
+        get
+        {
+            var valuesArg = new Argument<string[]>("values")
+            {
+                Description = "One or more values to replace the list contents with", Arity = ArgumentArity.OneOrMore
+            };
+            var command = new Command("setlist", "Replace a list tag's contents with one or more values") { valuesArg };
+
+            command.SetAction(parsed =>
+            {
+                var options = new ConsoleOptions
+                {
+                    Command = ConsoleCommand.SetList,
+                    Path = parsed.GetRequiredValue(PathOption)
+                };
+                options.Values.AddRange(parsed.GetValue(valuesArg));
+                Execute(options);
+            });
+
+            return command;
+        }
+    }
+
+    private static Command JsonCommand
+    {
+        get
+        {
+            var outputArg = new Argument<string>("output")
+            {
+                Description = "Path to the JSON output file"
+            };
+            var command = new Command("json", "Export the NBT tree rooted at a tag as JSON") { outputArg };
+
+            command.SetAction(parsed =>
+            {
+                var options = new ConsoleOptions
+                {
+                    Command = ConsoleCommand.Json,
+                    Path = parsed.GetRequiredValue(PathOption)
+                };
+                options.Values.Add(parsed.GetValue(outputArg));
+                Execute(options);
+            });
+
+            return command;
+        }
+    }
+
+    private static void Execute(ConsoleOptions options)
+    {
+        var op = CommandTable[options.Command];
+        if (!op.OptionsValid(options))
+        {
+            Console.Error.WriteLine("Error: Invalid options specified for the given command");
+            return;
         }
 
-        public bool Run (string[] args)
+        var successCount = 0;
+        var failCount = 0;
+
+        foreach (var targetNode in new NbtPathEnumerator(options.Path))
         {
-            _options.Parse(args);
-
-            if (_options.Command == ConsoleCommand.Help)
-                return PrintHelp();
-
-            if (_options.Path == null)
-                return PrintUsage("Error: You must specify a path");
-            if (!_commandTable.ContainsKey(_options.Command))
-                return PrintUsage("Error: No command specified");
-
-            ConsoleOperation op = _commandTable[_options.Command];
-            if (!op.OptionsValid(_options))
-                return PrintError("Error: Invalid options specified for the given command");
-
-            int successCount = 0;
-            int failCount = 0;
-
-            foreach (var targetNode in new NbtPathEnumerator(_options.Path)) {
-                if (!op.CanProcess(targetNode)) {
-                    Console.WriteLine(targetNode.NodePath + ": ERROR (invalid command)");
-                    failCount++;
-                }
-                if (!op.Process(targetNode, _options)) {
-                    Console.WriteLine(targetNode.NodePath + ": ERROR (apply)");
-                    failCount++;
-                }
-
-                targetNode.Root.Save();
-
-                Console.WriteLine(targetNode.NodePath + ": OK");
-                successCount++;
+            if (!op.CanProcess(targetNode))
+            {
+                Console.WriteLine(targetNode.NodePath + ": ERROR (invalid command)");
+                failCount++;
             }
 
-            Console.WriteLine("Operation complete.  Nodes succeeded: {0}  Nodes failed: {1}", successCount, failCount);
-
-            return true;
-        }
-
-        private DataNode OpenFile (string path)
-        {
-            DataNode node = null;
-            foreach (var item in FileTypeRegistry.RegisteredTypes) {
-                if (item.Value.NamePatternTest(path))
-                    node = item.Value.NodeCreate(path);
+            if (!op.Process(targetNode, options))
+            {
+                Console.WriteLine(targetNode.NodePath + ": ERROR (apply)");
+                failCount++;
             }
 
-            return node;
+            targetNode.Root.Save();
+
+            Console.WriteLine(targetNode.NodePath + ": OK");
+            successCount++;
         }
 
-        private DataNode ExpandDataNode (DataNode dataNode, string tagPath)
-        {
-            string[] pathParts = tagPath.Split('/');
-
-            DataNode curTag = dataNode;
-            curTag.Expand();
-
-            foreach (var part in pathParts) {
-                TagDataNode.Container container = curTag as TagDataNode.Container;
-                if (curTag == null)
-                    throw new Exception("Invalid tag path");
-
-                DataNode childTag = null;
-                foreach (var child in curTag.Nodes) {
-                    if (child.NodePathName == part)
-                        childTag = child;
-                }
-
-                if (childTag == null)
-                    throw new Exception("Invalid tag path");
-
-                curTag.Expand();
-            }
-
-            return curTag;
-        }
-
-        private bool PrintHelp ()
-        {
-            Console.WriteLine("NBTUtil - Copyright 2014 Justin Aquadro");
-            _options.PrintUsage();
-
-            return true;
-        }
-
-        private bool PrintUsage (string error)
-        {
-            Console.WriteLine(error);
-            _options.PrintUsage();
-
-            return false;
-        }
-
-        private bool PrintError (string error)
-        {
-            Console.WriteLine(error);
-
-            return false;
-        }
+        Console.WriteLine("Operation complete.  Nodes succeeded: {0}  Nodes failed: {1}", successCount, failCount);
     }
 }

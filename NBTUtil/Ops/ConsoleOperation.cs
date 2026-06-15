@@ -1,18 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NBTExplorer.Model;
+﻿using NBTExplorer.Model;
 
-namespace NBTUtil.Ops
+namespace NBTUtil.Ops;
+
+internal abstract class ConsoleOperation
 {
-    abstract class ConsoleOperation
+    public virtual bool OptionsValid(ConsoleOptions options)
     {
-        public virtual bool OptionsValid (ConsoleOptions options)
-        {
-            return true;
-        }
-
-        public abstract bool CanProcess (DataNode dataNode);
-        public abstract bool Process (DataNode dataNode, ConsoleOptions options);
+        return true;
     }
+
+    public abstract bool CanProcess(DataNode dataNode);
+    public abstract bool Process(DataNode dataNode, ConsoleOptions options);
 }

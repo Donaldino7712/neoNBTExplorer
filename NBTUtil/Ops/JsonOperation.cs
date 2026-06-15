@@ -1,58 +1,58 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
+﻿using System.IO;
 using NBTExplorer.Model;
 using Substrate.Nbt;
 
-namespace NBTUtil.Ops
+namespace NBTUtil.Ops;
+
+internal class JsonOperation : ConsoleOperation
 {
-    class JsonOperation : ConsoleOperation
+    public override bool CanProcess(DataNode dataNode)
     {
-        public override bool CanProcess (DataNode dataNode)
+        return dataNode is NbtFileDataNode or TagDataNode;
+    }
+
+    public override bool Process(DataNode dataNode, ConsoleOptions options)
+    {
+        if (options.Values.Count == 0)
+            return false;
+
+        var jsonPath = options.Values[0];
+        using var stream = File.OpenWrite(jsonPath);
+        using var writer = new StreamWriter(stream);
+        switch (dataNode)
         {
-            return dataNode is NbtFileDataNode || dataNode is TagDataNode;
-        }
-
-        public override bool Process (DataNode dataNode, ConsoleOptions options)
-        {
-            if (options.Values.Count == 0)
-                return false;
-
-            string jsonPath = options.Values[0];
-            using (FileStream stream = File.OpenWrite(jsonPath)) {
-                using (StreamWriter writer = new StreamWriter(stream)) {
-                    if (dataNode is TagDataNode) {
-                        TagDataNode tagNode = dataNode as TagDataNode;
-                        WriteNbtTag(writer, tagNode.Tag);
-                    }
-                    else if (dataNode is NbtFileDataNode) {
-                        dataNode.Expand();
-                        TagNodeCompound root = new TagNodeCompound();
-
-                        foreach (DataNode child in dataNode.Nodes) {
-                            TagDataNode childTagNode = child as TagDataNode;
-                            if (childTagNode == null)
-                                continue;
-
-                            if (childTagNode.Tag != null)
-                                root.Add(childTagNode.NodeName, childTagNode.Tag);
-                        }
-
-                        WriteNbtTag(writer, root);
-                    }
-                }
+            case TagDataNode node:
+            {
+                WriteNbtTag(writer, node.Tag);
+                break;
             }
+            case NbtFileDataNode:
+            {
+                dataNode.Expand();
+                var root = new TagNodeCompound();
 
-            return true;
+                foreach (var child in dataNode.Nodes)
+                {
+                    if (child is not TagDataNode childTagNode)
+                        continue;
+
+                    if (childTagNode.Tag != null)
+                        root.Add(childTagNode.NodeName, childTagNode.Tag);
+                }
+
+                WriteNbtTag(writer, root);
+                break;
+            }
         }
 
-        private void WriteNbtTag (StreamWriter writer, TagNode tag)
-        {
-            if (tag == null)
-                return;
+        return true;
+    }
 
-            writer.Write(JSONSerializer.Serialize(tag));
-        }
+    private static void WriteNbtTag(StreamWriter writer, TagNode tag)
+    {
+        if (tag == null)
+            return;
+
+        writer.Write(JSONSerializer.Serialize(tag));
     }
 }

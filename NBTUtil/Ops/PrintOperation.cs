@@ -1,27 +1,23 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using NBTExplorer.Model;
 
-namespace NBTUtil.Ops
+namespace NBTUtil.Ops;
+
+internal class PrintOperation : ConsoleOperation
 {
-    class PrintOperation : ConsoleOperation
+    public override bool CanProcess(DataNode dataNode)
     {
-        public override bool CanProcess (DataNode dataNode)
-        {
-            return true;
-        }
+        return true;
+    }
 
-        public override bool Process (DataNode dataNode, ConsoleOptions options)
-        {
-            Console.WriteLine(TypePrinter.Print(dataNode, options.ShowTypes));
+    public override bool Process(DataNode dataNode, ConsoleOptions options)
+    {
+        Console.WriteLine(TypePrinter.Print(dataNode, options.ShowTypes));
 
-            if (dataNode.IsContainerType) {
-                foreach (var child in dataNode.Nodes)
-                    Console.WriteLine(" | " + TypePrinter.Print(child, options.ShowTypes));
-            }
+        if (!dataNode.IsContainerType) return true;
+        foreach (var child in dataNode.Nodes)
+            Console.WriteLine(" | " + TypePrinter.Print(child, options.ShowTypes));
 
-            return true;
-        }
+        return true;
     }
 }

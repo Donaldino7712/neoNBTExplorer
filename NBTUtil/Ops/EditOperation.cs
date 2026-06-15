@@ -1,35 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NBTExplorer.Model;
+﻿using NBTExplorer.Model;
 
-namespace NBTUtil.Ops
+namespace NBTUtil.Ops;
+
+internal class EditOperation : ConsoleOperation
 {
-    class EditOperation : ConsoleOperation
+    public override bool OptionsValid(ConsoleOptions options)
     {
-        public override bool OptionsValid (ConsoleOptions options)
-        {
-            if (options.Values.Count == 0)
-                return false;
-            return true;
-        }
+        return options.Values.Count != 0;
+    }
 
-        public override bool CanProcess (DataNode dataNode)
-        {
-            if (!(dataNode is TagDataNode) || !dataNode.CanEditNode)
-                return false;
-            if (dataNode is TagByteArrayDataNode || dataNode is TagIntArrayDataNode || dataNode is TagShortArrayDataNode || dataNode is TagLongArrayDataNode)
-                return false;
+    public override bool CanProcess(DataNode dataNode)
+    {
+        if (dataNode is not TagDataNode || !dataNode.CanEditNode)
+            return false;
+        return dataNode is not TagByteArrayDataNode && dataNode is not TagIntArrayDataNode &&
+               dataNode is not TagShortArrayDataNode && dataNode is not TagLongArrayDataNode;
+    }
 
-            return true;
-        }
+    public override bool Process(DataNode dataNode, ConsoleOptions options)
+    {
+        var value = options.Values[0];
 
-        public override bool Process (DataNode dataNode, ConsoleOptions options)
-        {
-            string value = options.Values[0];
-
-            TagDataNode tagDataNode = dataNode as TagDataNode;
-            return tagDataNode.Parse(value);
-        }
+        var tagDataNode = dataNode as TagDataNode;
+        return tagDataNode != null && tagDataNode.Parse(value);
     }
 }

@@ -1,15 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿namespace NBTUtil;
 
-namespace NBTUtil
+internal static class Program
 {
-    class Program
+    private static int Main(string[] args)
     {
-        static void Main (string[] args)
-        {
-            ConsoleRunner runner = new ConsoleRunner();
-            runner.Run(args);
-        }
+        return ConsoleRunner.Run(args);
     }
 }
