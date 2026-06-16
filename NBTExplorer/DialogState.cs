@@ -76,18 +76,7 @@ public partial class MainWindow
         // If inside a TAG_LIST, we just bypass the Dialog altogether (because it can't have a Name anyway).
         if ((SelectedTreeNodes.FirstOrDefault()?.DataNode as TagDataNode)?.Tag.GetTagType() == TagType.TAG_LIST)
         {
-            // Well, we don't really bypass it per-se but rather "trick" it to never show.
-            CurrentDialog = state;
-
-            try
-            {
-                await state.ExecuteAsync();
-            }
-            finally
-            {
-                CloseDialog();
-            }
-
+            await state.ExecuteAsync();
             return;
         }
 
