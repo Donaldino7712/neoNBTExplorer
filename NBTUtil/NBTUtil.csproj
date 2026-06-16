@@ -21,6 +21,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\NBTModel\NBTModel.csproj"/>
-        <ProjectReference Include="..\Substrate\SubstrateCS\Substrate.csproj"/>
+        <ProjectReference Include="..\Substrate\Substrate\Substrate.csproj"/>
     </ItemGroup>
 </Project>
