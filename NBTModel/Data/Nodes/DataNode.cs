@@ -38,7 +38,7 @@ public class DataNode
         set => Parent?.IsDataModified = value;
     }
 
-    protected bool IsExpanded { get; private set; }
+    public bool IsExpanded { get; private set; }
 
     public virtual string NodeName => "";
 
